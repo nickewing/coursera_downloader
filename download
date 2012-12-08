@@ -6,15 +6,20 @@ require "lib/coursera_downloader"
 class CourseraPolicy
   WHITELIST_PATTERNS = [
     /^https?:\/\/class\.coursera\.org\/[^\/]+\//,
-    /^https?:\/\/[^\.]\.s3\.amazonaws\.com/,
+    /^https?:\/\/[^\.]+\.s3\.amazonaws\.com/,
     /^https?:\/\/s3\.amazonaws\.com/,
-    /^https?:\/\/[^\.]\.cloudfront\.net/
+    /^https?:\/\/[^\.]+\.cloudfront\.net/
   ]
 
   BLACKLIST_PATTERNS = [
-    /^https?:\/\/class\.coursera\.org\/[^\/]+\/forum/,
+    # /^https?:\/\/class\.coursera\.org\/[^\/]+\/quiz/,
+    # /^https?:\/\/class\.coursera\.org\/[^\/]+\/forum/,
+    # /^https?:\/\/class\.coursera\.org\/[^\/]+\/lecture/,
+    # /^https?:\/\/class\.coursera\.org\/[^\/]+\/wiki/,
     /^https?:\/\/class\.coursera\.org\/[^\/]+\/quiz\/start/,
-    /^https?:\/\/class\.coursera\.org\/[^\/]+\/auth\/logout/
+    /^https?:\/\/class\.coursera\.org\/[^\/]+\/auth\/logout/,
+    /^http:?:\/\/s3\.amazonaws\.com\/mlclass-resources\/software/,
+    /\.(exe|dmg)(\?.*)?$/
   ]
 
   def allowed_url?(url)
@@ -37,8 +42,6 @@ password = ARGV[2]
 file_store_dir = ARGV[3]
 
 course = CourseraDownloader::Course.new(course_name)
-
-puts "Logging in"
 course.login(email, password)
 
 policy = CourseraPolicy.new

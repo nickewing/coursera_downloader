@@ -1,6 +1,5 @@
 require "fileutils"
 require "cgi"
-require "uri"
 
 module CourseraDownloader
   class FileStore
@@ -8,8 +7,8 @@ module CourseraDownloader
       @containing_dir = containing_dir
     end
 
-    def path(url, path_in_source = false)
-      uri = URI.parse(url)
+    def path(uri, path_in_source = false)
+      uri = URI.parse(uri) unless uri.is_a?(URI)
 
       path = uri.path
       dir_name = File.dirname(path)
@@ -21,13 +20,17 @@ module CourseraDownloader
       if uri.query
         query = "?#{uri.query}"
         query = CGI.escape(query)
-        query = CGI.escape(query) if path_in_source
       else
         query = ""
       end
 
       store_dir = File.join(@containing_dir, uri.host, dir_name)
-      file_path = File.join(store_dir, "#{base_name}#{query}#{extension}")
+      store_dir = escape_path(store_dir) if path_in_source
+
+      file_name = "#{base_name}#{query}#{extension}"
+      file_name = escape_path(file_name) if path_in_source
+
+      file_path = File.join(store_dir, file_name)
 
       [store_dir, file_path]
     end
@@ -47,14 +50,20 @@ module CourseraDownloader
       ("../" * (containing_dirs.length - 1)) + File.join(resource_dirs)
     end
 
-    def write(url, body)
-      store_dir, file_path = path(url)
+    def write(document)
+      store_dir, file_path = path(document.uri)
 
       FileUtils.mkdir_p(store_dir)
 
       File.open(file_path, "wb") do |file|
-        file.write(body)
+        file.write(document.body)
       end
+    end
+
+    private
+
+    def escape_path(path)
+      path.split("/").map{|e| CGI.escape(e)}.join("/")
     end
   end
 end

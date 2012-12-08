@@ -5,13 +5,13 @@ module CourseraDownloader
     def initialize(curl, policy, store)
       @curl = curl
       @queue = []
-      @completed = Set.new
+      @enqueued = Set.new # all URLs that have been ever enqueued during this run
       @store = store
       @policy = policy
     end
 
     def get(url)
-      @queue.push(url)
+      enqueue_unless_completed(url)
       fetch_all
     end
 
@@ -19,27 +19,26 @@ module CourseraDownloader
 
     def fetch_one(url)
       puts "Downloading #{url}"
-      @completed << url
 
-      body, is_html = get_url(url)
+      document = get_url(url)
 
-      if is_html
-        processor = DocumentProcessor.new(url, body, @store, @policy)
+      if document.is_html? || document.is_css?
+        processor = DocumentProcessor.new(document, @store, @policy)
         processor.process
 
         processor.resource_urls.map do |resource_url|
           enqueue_unless_completed(resource_url)
         end
 
-        body = processor.body
+        body = processor.document.body
       end
 
-      @store.write(url, body)
+      @store.write(document)
     end
 
     def fetch_all
       while @queue.length > 0
-        url = @queue.pop
+        url = @queue.shift
         fetch_one(url)
       end
     end
@@ -51,14 +50,14 @@ module CourseraDownloader
       # TODO: use real logger
       puts "WARN: Failed to get URL '#{url}'.  Response code #{@curl.response_code}" unless @curl.response_code == 200
 
-      is_html = @curl.content_type =~ /text\/html/
-      [@curl.body_str, is_html]
+      Document.new(url, @curl.body_str, @curl.content_type)
     end
 
     def enqueue_unless_completed(url)
-      _, file_path = @store.path(url)
+      # _, file_path = @store.path(url)
 
-      if !@completed.include?(url)# && !File.exists?(file_path)
+      if !@enqueued.include?(url)# && !File.exists?(file_path)
+        @enqueued << url
         @queue.push(url)
       end
     end
