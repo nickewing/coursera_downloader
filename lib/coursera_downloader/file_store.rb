@@ -3,6 +3,8 @@ require "cgi"
 
 module CourseraDownloader
   class FileStore
+    attr_reader :containing_dir
+
     def initialize(containing_dir)
       @containing_dir = containing_dir
     end

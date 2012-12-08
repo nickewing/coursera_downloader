@@ -1,33 +1,60 @@
 require "set"
+require "yaml"
 
 module CourseraDownloader
   class Downloader
-    def initialize(curl, policy, store)
-      @curl = curl
+    MAX_BATCH_SIZE = 10
+
+    def initialize(cookie_file, policy, store)
+      @cookie_file = cookie_file
       @queue = []
       @enqueued = Set.new # all URLs that have been ever enqueued during this run
       @store = store
       @policy = policy
+
+      read_state
     end
 
     def get(url)
-      enqueue_unless_completed(url)
+      enqueue_new_url(url)
       fetch_all
+      puts ">> #{@enqueued.length} total files downloaded."
     end
 
     private
 
-    def fetch_one(url)
-      puts "Downloading #{url}"
+    def state_save_path
+      File.join(@store.containing_dir, "manifest.yml")
+    end
 
-      document = get_url(url)
+    def write_state
+      if File.exists?(@store.containing_dir)
+        File.open(state_save_path, "wb") do |file|
+          state = {
+            :queue => @queue,
+            :enqueued => @enqueued.to_a
+          }
+          file.write(YAML::dump(state))
+        end
+      end
+    end
 
+    def read_state
+      if File.exists?(state_save_path)
+        saved_state = YAML::load(File.read(state_save_path))
+
+        @queue = saved_state[:queue]
+        @enqueued = Set.new(saved_state[:enqueued])
+      end
+    end
+
+    def handle_document(document)
       if document.is_html? || document.is_css?
         processor = DocumentProcessor.new(document, @store, @policy)
         processor.process
 
         processor.resource_urls.map do |resource_url|
-          enqueue_unless_completed(resource_url)
+          enqueue_new_url(resource_url)
         end
 
         body = processor.document.body
@@ -37,26 +64,61 @@ module CourseraDownloader
     end
 
     def fetch_all
-      while @queue.length > 0
-        url = @queue.shift
-        fetch_one(url)
+      begin
+        interrupted = false
+        trap("INT") do
+          interrupted = true
+        end
+
+        while @queue.length > 0 && !interrupted
+          batch = @queue.shift(MAX_BATCH_SIZE)
+          fetch_batch(batch)
+        end
+
+        trap("INT", "DEFAULT")
+      ensure
+        write_state
       end
     end
 
-    def get_url(url)
-      @curl.url = url
-      @curl.http_get
+    def fetch_batch(batch)
+      m = Curl::Multi.new
 
-      # TODO: use real logger
-      puts "WARN: Failed to get URL '#{url}'.  Response code #{@curl.response_code}" unless @curl.response_code == 200
+      batch.each do |url|
+        curl = Curl::Easy.new(url) do |curl|
+          curl.enable_cookies = true
+          curl.cookiefile = @cookie_file.path
+          curl.cookiejar = @cookie_file.path
+          curl.follow_location = true
 
-      Document.new(url, @curl.body_str, @curl.content_type)
+          curl.on_complete do |result|
+            begin
+              if result.response_code == 200
+                puts "Downloaded: #{url}"
+
+                content_type = result.content_type
+                content_type.force_encoding("ASCII") if content_type.respond_to?(:force_encoding)
+
+                document = Document.new(url, result.body_str, content_type)
+                handle_document(document)
+              else
+                # # TODO: use real logger
+                puts "WARN: Failed to get URL '#{url}'.  Response code #{result.response_code}" unless result.response_code == 200
+              end
+            rescue => e
+              p e
+            end
+          end
+        end
+
+        m.add(curl)
+      end
+
+      m.perform
     end
 
-    def enqueue_unless_completed(url)
-      # _, file_path = @store.path(url)
-
-      if !@enqueued.include?(url)# && !File.exists?(file_path)
+    def enqueue_new_url(url)
+      if !@enqueued.include?(url)
         @enqueued << url
         @queue.push(url)
       end

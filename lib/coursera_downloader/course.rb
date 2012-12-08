@@ -3,32 +3,34 @@ require "tempfile"
 
 module CourseraDownloader
   class Course
-    attr_reader :curl
+    attr_reader :cookie_file
 
     def initialize(name)
       @name = name
-
-      cookie_file = Tempfile.new('coursera_cookies')
-      @curl = Curl::Easy.new do |curl|
-        curl.verbose = false
-        curl.enable_cookies = true
-        curl.cookiefile = cookie_file.path
-        curl.cookiejar = cookie_file.path
-        curl.follow_location = true
-      end
+      @cookie_file = Tempfile.new('coursera_cookies')
     end
 
     def login(email, password)
-      @curl.url = login_redirect_url
-      @curl.http_get
+      curl = Curl::Easy.new do |curl|
+        curl.verbose = false
+        curl.enable_cookies = true
+        curl.cookiefile = @cookie_file.path
+        curl.cookiejar = @cookie_file.path
+        curl.follow_location = true
+      end
 
-      @curl.url = @curl.last_effective_url
+      curl.url = login_redirect_url
+      curl.http_get
 
-      @curl.http_post([
+      curl.url = curl.last_effective_url
+
+      curl.http_post([
         Curl::PostField.content('email', email),
         Curl::PostField.content('password', password),
         Curl::PostField.content('login', "Login")
       ])
+
+      curl.close
     end
 
     def host_url

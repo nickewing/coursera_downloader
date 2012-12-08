@@ -17,6 +17,7 @@ class CourseraPolicy
     # /^https?:\/\/class\.coursera\.org\/[^\/]+\/lecture/,
     # /^https?:\/\/class\.coursera\.org\/[^\/]+\/wiki/,
     /^https?:\/\/class\.coursera\.org\/[^\/]+\/quiz\/start/,
+    /^https?:\/\/class\.coursera\.org\/[^\/]+\/generic\/apply_late_days/,
     /^https?:\/\/class\.coursera\.org\/[^\/]+\/auth\/logout/,
     /^http:?:\/\/s3\.amazonaws\.com\/mlclass-resources\/software/,
     /\.(exe|dmg)(\?.*)?$/
@@ -46,5 +47,5 @@ course.login(email, password)
 
 policy = CourseraPolicy.new
 store = CourseraDownloader::FileStore.new(file_store_dir)
-downloader = CourseraDownloader::Downloader.new(course.curl, policy, store)
+downloader = CourseraDownloader::Downloader.new(course.cookie_file, policy, store)
 downloader.get(course.index_url)
