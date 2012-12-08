@@ -1,0 +1,18 @@
+PATH
+  remote: .
+  specs:
+    coursera_downloader (0.1.0)
+      curb (~> 0.8)
+      nokogiri (~> 1.5)
+
+GEM
+  remote: http://www.rubygems.org/
+  specs:
+    curb (0.8.3)
+    nokogiri (1.5.5)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  coursera_downloader!
