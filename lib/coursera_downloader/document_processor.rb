@@ -2,22 +2,12 @@ require "nokogiri"
 
 module CourseraDownloader
   class DocumentProcessor
-    WHITELIST_PATTERNS = [
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\//,
-      /^https?:\/\/[^\.]\.s3\.amazonaws\.com/,
-      /^https?:\/\/[^\.]\.cloudfront\.net/
-    ]
 
-    BLACKLIST_PATTERNS = [
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\/forum/,
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\/quiz\/start/,
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\/auth\/logout/
-    ]
-
-    def initialize(url, body, store)
+    def initialize(url, body, store, policy)
       @url = url
       @body = body
       @store = store
+      @policy = policy
     end
 
     attr_reader :body, :resource_urls
@@ -33,7 +23,7 @@ module CourseraDownloader
 
         url = URI.parse(url)
         url = normalize_resource_url(url)
-        next unless allowed_url?(url)
+        next unless @policy.allowed_url?(url)
 
         urls << url
 
@@ -50,19 +40,6 @@ module CourseraDownloader
     end
 
     private
-
-    def allowed_url?(url)
-      BLACKLIST_PATTERNS.each do |pattern|
-        return false if url.match(pattern)
-      end
-
-      match = false
-      WHITELIST_PATTERNS.each do |pattern|
-        match = true if url.match(pattern)
-      end
-
-      match
-    end
 
     def normalize_resource_url(resource_url)
       unless resource_url.host

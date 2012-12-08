@@ -1,19 +1,21 @@
 require "curb"
+require "tempfile"
 
 module CourseraDownloader
   class Course
+    attr_reader :curl
+
     def initialize(name)
       @name = name
 
+      cookie_file = Tempfile.new('coursera_cookies')
       @curl = Curl::Easy.new do |curl|
-        curl.verbose = VERBOSE
+        curl.verbose = false
         curl.enable_cookies = true
-        curl.cookiefile = COOKIE_FILE
-        curl.cookiejar = COOKIE_FILE
+        curl.cookiefile = cookie_file.path
+        curl.cookiejar = cookie_file.path
         curl.follow_location = true
       end
-
-      @downloader = Downloader.new(@curl)
     end
 
     def login(email, password)
@@ -35,18 +37,6 @@ module CourseraDownloader
 
     def index_url
       "#{host_url}/#{@name}/class/index"
-    end
-
-    def lecture_url
-      "#{host_url}/#{@name}/lecture/index"
-    end
-
-    def get_index
-      @downloader.get(index_url)
-    end
-
-    def get_lectures
-      @downloader.get(lecture_url)
     end
 
     private

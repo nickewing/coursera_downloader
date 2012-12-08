@@ -2,11 +2,12 @@ require "set"
 
 module CourseraDownloader
   class Downloader
-    def initialize(curl)
+    def initialize(curl, policy, store)
       @curl = curl
       @queue = []
       @completed = Set.new
-      @store = FileStore.new
+      @store = store
+      @policy = policy
     end
 
     def get(url)
@@ -23,7 +24,7 @@ module CourseraDownloader
       body, is_html = get_url(url)
 
       if is_html
-        processor = DocumentProcessor.new(url, body, @store)
+        processor = DocumentProcessor.new(url, body, @store, @policy)
         processor.process
 
         processor.resource_urls.map do |resource_url|

@@ -4,6 +4,10 @@ require "uri"
 
 module CourseraDownloader
   class FileStore
+    def initialize(containing_dir)
+      @containing_dir = containing_dir
+    end
+
     def path(url, path_in_source = false)
       uri = URI.parse(url)
 
@@ -22,7 +26,7 @@ module CourseraDownloader
         query = ""
       end
 
-      store_dir = File.join(uri.host, dir_name)
+      store_dir = File.join(@containing_dir, uri.host, dir_name)
       file_path = File.join(store_dir, "#{base_name}#{query}#{extension}")
 
       [store_dir, file_path]

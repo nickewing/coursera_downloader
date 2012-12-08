@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+
+$: << File.dirname(__FILE__)
+require "lib/coursera_downloader"
+
+class CourseraPolicy
+  WHITELIST_PATTERNS = [
+    /^https?:\/\/class\.coursera\.org\/[^\/]+\//,
+    /^https?:\/\/[^\.]\.s3\.amazonaws\.com/,
+    /^https?:\/\/s3\.amazonaws\.com/,
+    /^https?:\/\/[^\.]\.cloudfront\.net/
+  ]
+
+  BLACKLIST_PATTERNS = [
+    /^https?:\/\/class\.coursera\.org\/[^\/]+\/forum/,
+    /^https?:\/\/class\.coursera\.org\/[^\/]+\/quiz\/start/,
+    /^https?:\/\/class\.coursera\.org\/[^\/]+\/auth\/logout/
+  ]
+
+  def allowed_url?(url)
+    BLACKLIST_PATTERNS.each do |pattern|
+      return false if url.match(pattern)
+    end
+
+    match = false
+    WHITELIST_PATTERNS.each do |pattern|
+      match = true if url.match(pattern)
+    end
+
+    match
+  end
+end
+
+course_name = ARGV[0]
+email = ARGV[1]
+password = ARGV[2]
+file_store_dir = ARGV[3]
+
+course = CourseraDownloader::Course.new(course_name)
+
+puts "Logging in"
+course.login(email, password)
+
+policy = CourseraPolicy.new
+store = CourseraDownloader::FileStore.new(file_store_dir)
+downloader = CourseraDownloader::Downloader.new(course.curl, policy, store)
+downloader.get(course.index_url)
