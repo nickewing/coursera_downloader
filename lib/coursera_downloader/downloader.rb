@@ -19,7 +19,8 @@ module CourseraDownloader
     end
 
     def get(url)
-      url = URI.parse(url)
+      url = URI.parse(url) unless url.is_a?(URI)
+
       enqueue_new_url(url)
       fetch_all
       @logger.info("Downloaded #{@enqueued.length} total files")

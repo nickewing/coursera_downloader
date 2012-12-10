@@ -1,4 +1,5 @@
 require "curb"
+require "uri"
 require "tempfile"
 
 module CourseraDownloader
@@ -30,7 +31,7 @@ module CourseraDownloader
       ])
 
       curl.follow_location = false
-      curl.url = index_url
+      curl.url = index_url.to_s
       curl.http_get
 
       response_code = curl.response_code
@@ -39,15 +40,15 @@ module CourseraDownloader
       response_code == 200
     end
 
-    def host_url
-      "https://class.coursera.org"
-    end
-
     def index_url
-      "#{host_url}/#{@name}/class/index"
+      URI.parse("#{host_url}/#{@name}/class/index")
     end
 
     private
+
+    def host_url
+      "https://class.coursera.org"
+    end
 
     def login_redirect_url
       "#{host_url}/#{@name}/auth/auth_redirector?type=login&subtype=normal&email=&visiting=&minimal=true"

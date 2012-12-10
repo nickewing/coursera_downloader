@@ -10,8 +10,6 @@ module CourseraDownloader
     end
 
     def path(url, path_in_source = false)
-      # url = URI.parse(url) unless url.is_a?(URI)
-
       path = url.path
       dir_name = File.dirname(path)
       extension = File.extname(path)
@@ -27,10 +25,10 @@ module CourseraDownloader
       end
 
       store_dir = File.join(@containing_dir, url.host, dir_name)
-      store_dir = escape_path(store_dir) if path_in_source
+      store_dir = Util.escape_path(store_dir) if path_in_source
 
       file_name = "#{base_name}#{query}#{extension}"
-      file_name = escape_path(file_name) if path_in_source
+      file_name = Util.escape_path(file_name) if path_in_source
 
       file_path = File.join(store_dir, file_name)
 
@@ -41,15 +39,7 @@ module CourseraDownloader
       _, containing_path = path(containing_url, path_in_source)
       _, resource_path = path(resource_url, path_in_source)
 
-      containing_dirs = containing_path.split("/")
-      resource_dirs = resource_path.split("/")
-
-      while containing_dirs.length > 1 && containing_dirs[0] == resource_dirs[0]
-        containing_dirs.shift
-        resource_dirs.shift
-      end
-
-      ("../" * (containing_dirs.length - 1)) + File.join(resource_dirs)
+      Util.path_relative_to_path(containing_path, resource_path)
     end
 
     def write(document)
@@ -62,10 +52,5 @@ module CourseraDownloader
       end
     end
 
-    private
-
-    def escape_path(path)
-      path.split("/").map{|e| CGI.escape(e)}.join("/")
-    end
   end
 end

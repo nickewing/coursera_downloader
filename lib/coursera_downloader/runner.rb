@@ -23,6 +23,9 @@ module CourseraDownloader
         store = FileStore.new(file_store_dir)
         downloader = Downloader.new(course.cookie_file, policy, store, logger)
         downloader.get(course.index_url)
+
+        _, index_store_path = store.path(course.index_url)
+        logger.info("The course index can be found at #{index_store_path}")
       else
         logger.error("Failed to login.")
       end
