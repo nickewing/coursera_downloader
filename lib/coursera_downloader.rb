@@ -1,11 +1,4 @@
-$: << File.dirname(__FILE__)
-
-module CourseraDownloader
-  autoload :Document, "coursera_downloader/document"
-  autoload :FileStore, "coursera_downloader/file_store"
-  autoload :DocumentProcessor, "coursera_downloader/document_processor"
-  autoload :LogFormatter, "coursera_downloader/log_formatter"
-  autoload :Downloader, "coursera_downloader/downloader"
-  autoload :Policy, "coursera_downloader/policy"
-  autoload :Course, "coursera_downloader/course"
+all_files = File.expand_path("coursera_downloader/*", File.dirname(__FILE__))
+Dir[all_files].each do |file|
+  require file
 end
