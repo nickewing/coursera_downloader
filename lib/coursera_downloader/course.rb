@@ -11,26 +11,32 @@ module CourseraDownloader
     end
 
     def login(email, password)
-      curl = Curl::Easy.new do |curl|
-        curl.verbose = false
-        curl.enable_cookies = true
-        curl.cookiefile = @cookie_file.path
-        curl.cookiejar = @cookie_file.path
-        curl.follow_location = true
-      end
+      curl = Curl::Easy.new
+
+      curl.verbose = false
+      curl.enable_cookies = true
+      curl.cookiefile = @cookie_file.path
+      curl.cookiejar = @cookie_file.path
+      curl.follow_location = true
 
       curl.url = login_redirect_url
       curl.http_get
 
       curl.url = curl.last_effective_url
-
       curl.http_post([
         Curl::PostField.content('email', email),
         Curl::PostField.content('password', password),
         Curl::PostField.content('login', "Login")
       ])
 
+      curl.follow_location = false
+      curl.url = index_url
+      curl.http_get
+
+      response_code = curl.response_code
       curl.close
+
+      response_code == 200
     end
 
     def host_url
