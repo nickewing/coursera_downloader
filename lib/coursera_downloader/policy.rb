@@ -1,32 +1,16 @@
+require "yaml"
+
 module CourseraDownloader
   class Policy
-    WHITELIST_PATTERNS = [
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\//,
-      /^https?:\/\/[^\.]+\.s3\.amazonaws\.com/,
-      /^https?:\/\/s3\.amazonaws\.com/,
-      /^https?:\/\/[^\.]+\.cloudfront\.net/
-    ]
+    def initialize(file)
+      @patterns = YAML::load(File.read(file))
 
-    BLACKLIST_PATTERNS = [
-      /^http:?:\/\/s3\.amazonaws\.com\/mlclass-resources\/software/,
-      /\.(exe|dmg)(\?.*)?$/
-    ]
-
-    DISALBE_PATTERNS = [
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\/quiz/,
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\/forum/,
-      # /^https?:\/\/class\.coursera\.org\/[^\/]+\/lecture/,
-      # /^https?:\/\/class\.coursera\.org\/[^\/]+\/wiki/,
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\/class\/preferences/,
-      /^https:\/\/class.coursera.org\/[^\/]+\/forum\/thread?.*view=.*/,
-      /^https:\/\/class.coursera.org\/[^\/]+\/forum\/tag?.*view=.*/,
-      /^https:\/\/class.coursera.org\/[^\/]+\/forum\/list?.*view=.*/,
-      /^https:\/\/class.coursera.org\/[^\/]+\/forum\/toggle/,
-      /^https:\/\/class.coursera.org\/[^\/]+\/forum\/tag_modify/,
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\/quiz\/start/,
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\/generic\/apply_late_days/,
-      /^https?:\/\/class\.coursera\.org\/[^\/]+\/auth\/logout/,
-    ]
+      @patterns.each_pair do |group, patterns|
+        @patterns[group] = patterns.map do |pattern|
+          Regexp.new(pattern)
+        end
+      end
+    end
 
     def url_action(url)
       return :none if !url || (url.scheme && !(url.scheme != "http" || url.scheme != "https"))
@@ -39,12 +23,12 @@ module CourseraDownloader
     private
 
     def download_url?(url)
-      BLACKLIST_PATTERNS.each do |pattern|
+      @patterns["blacklist"].each do |pattern|
         return false if url.match(pattern)
       end
 
       match = false
-      WHITELIST_PATTERNS.each do |pattern|
+      @patterns["whitelist"].each do |pattern|
         match = true if url.match(pattern)
       end
 
@@ -52,7 +36,7 @@ module CourseraDownloader
     end
 
     def disable_url?(url)
-      DISALBE_PATTERNS.each do |pattern|
+      @patterns["disable"].each do |pattern|
         return true if url.match(pattern)
       end
 

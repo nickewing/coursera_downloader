@@ -1,0 +1,22 @@
+---
+whitelist:
+- ^https?://class\.coursera\.org/[^/]+/
+- ^https?://[^\.]+\.s3\.amazonaws\.com
+- ^https?://s3\.amazonaws\.com
+- ^https?://[^\.]+\.cloudfront\.net
+blacklist:
+- \.(exe|dmg)(\?.*)?$
+disable:
+# - ^https?://class\.coursera\.org/[^/]+/quiz
+# - ^https?://class\.coursera\.org/[^/]+/forum
+# - ^https?://class\.coursera\.org/[^/]+/lecture
+# - ^https?://class\.coursera\.org/[^/]+/wiki
+- ^https?://class\.coursera\.org/[^/]+/forum/thread?.*view=.*
+- ^https?://class\.coursera\.org/[^/]+/forum/tag?.*view=.*
+- ^https?://class\.coursera\.org/[^/]+/forum/list?.*view=.*
+- ^https?://class\.coursera\.org/[^/]+/forum/toggle
+- ^https?://class\.coursera\.org/[^/]+/forum/tag_modify
+- ^https?://class\.coursera\.org/[^/]+/quiz/start
+- ^https?://class\.coursera\.org/[^/]+/generic/apply_late_days
+- ^https?://class\.coursera\.org/[^/]+/auth/logout
+- ^https?://class\.coursera\.org/[^/]+/class/preferences
