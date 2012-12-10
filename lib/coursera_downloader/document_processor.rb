@@ -2,6 +2,8 @@ require "nokogiri"
 
 module CourseraDownloader
   class DocumentProcessor
+    DISABLED_HREF = "javascript:alert('Link disabled during download.');"
+
     attr_reader :resource_urls, :document
 
     def initialize(document, store, policy)
@@ -28,19 +30,14 @@ module CourseraDownloader
       doc.css("a, img, script, link").each do |element|
         url = element.attr("href") || element.attr("src")
 
-        next if !url || url.length == 0 || url[0] == "#"
+        url = normalize_url(url)
 
-        url = URI.parse(url)
-        url = normalize_resource_url(url)
-        next if !@policy.allowed_url?(url)
-
-        urls << url unless urls.include?(url)
-
-        path = @store.relative_resource_path(@document.uri, url, true)
-        if element.attr("href")
-          element["href"] = path
-        elsif element.attr("src")
-          element["src"] = path
+        case @policy.url_action(url)
+        when :disable
+          disable_html_element(element)
+        when :download
+          urls << url unless urls.include?(url)
+          localize_element(element, url)
         end
       end
 
@@ -53,6 +50,23 @@ module CourseraDownloader
       doc.to_s
     end
 
+    def localize_element(element, url)
+      path = @store.relative_resource_path(@document.url, url, true)
+      if element.attr("href")
+        element["href"] = path
+      elsif element.attr("src")
+        element["src"] = path
+      end
+    end
+
+    def disable_html_element(element)
+      if element.attr("href")
+        element["href"] = DISABLED_HREF
+      elsif element.attr("src")
+        element.remove
+      end
+    end
+
     def process_css(css)
       matches = css.scan(/url\(((")([^"]*)"|(')([^']*)'|[^\)]*)\)/)
 
@@ -61,16 +75,19 @@ module CourseraDownloader
         quote = match[1] || match[3]
         raw_url = match[2] || match[4] || match[0]
 
-        next if !raw_url || raw_url.length == 0
+        # puts ">>>> #{raw_url}"
+        url = normalize_url(raw_url)
 
-        url = URI.parse(raw_url)
-        url = normalize_resource_url(url)
-        next if !@policy.allowed_url?(url)
+        # p @policy.url_action(url)
 
-        urls << url unless urls.include?(url)
-
-        path = @store.relative_resource_path(@document.uri, url, true)
-        css.gsub!("url(#{quote}#{raw_url}#{quote})", "url('#{path}')")
+        case @policy.url_action(url)
+        when :disable
+          css.gsub!("url(#{quote}#{raw_url}#{quote})", "url()")
+        when :download
+          urls << url unless urls.include?(url)
+          path = @store.relative_resource_path(@document.url, url, true)
+          css.gsub!("url(#{quote}#{raw_url}#{quote})", "url('#{path}')")
+        end
       end
 
       @resource_urls += urls
@@ -78,12 +95,22 @@ module CourseraDownloader
       css
     end
 
-    def normalize_resource_url(resource_url)
-      unless resource_url.host
-        URI.join(@document.uri, resource_url).to_s
-      else
-        resource_url.to_s
+    def normalize_url(url)
+      return nil if !url || url.length == 0
+
+      begin
+        url = URI.parse(url)
+      rescue URI::InvalidURIError => e
+        return nil
       end
+
+      if url.host
+        url = url
+      else
+        url = URI.join(@document.url, url)
+      end
+
+      url
     end
   end
 end

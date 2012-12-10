@@ -1,5 +1,6 @@
 require "set"
 require "yaml"
+require "uri"
 
 module CourseraDownloader
   class Downloader
@@ -16,6 +17,7 @@ module CourseraDownloader
     end
 
     def get(url)
+      url = URI.parse(url)
       enqueue_new_url(url)
       fetch_all
       puts ">> #{@enqueued.length} total files downloaded."
@@ -85,7 +87,7 @@ module CourseraDownloader
       m = Curl::Multi.new
 
       batch.each do |url|
-        curl = Curl::Easy.new(url) do |curl|
+        curl = Curl::Easy.new(url.to_s) do |curl|
           curl.enable_cookies = true
           curl.cookiefile = @cookie_file.path
           curl.cookiejar = @cookie_file.path
@@ -106,7 +108,9 @@ module CourseraDownloader
                 puts "WARN: Failed to get URL '#{url}'.  Response code #{result.response_code}" unless result.response_code == 200
               end
             rescue => e
+              # # TODO: handle this better
               p e
+              puts e.backtrace
             end
           end
         end

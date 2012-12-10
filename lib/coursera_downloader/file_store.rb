@@ -9,24 +9,24 @@ module CourseraDownloader
       @containing_dir = containing_dir
     end
 
-    def path(uri, path_in_source = false)
-      uri = URI.parse(uri) unless uri.is_a?(URI)
+    def path(url, path_in_source = false)
+      # url = URI.parse(url) unless url.is_a?(URI)
 
-      path = uri.path
+      path = url.path
       dir_name = File.dirname(path)
       extension = File.extname(path)
       base_name = File.basename(path, extension)
 
       extension = ".html" unless extension.length > 0
 
-      if uri.query
-        query = "?#{uri.query}"
+      if url.query
+        query = "?#{url.query}"
         query = CGI.escape(query)
       else
         query = ""
       end
 
-      store_dir = File.join(@containing_dir, uri.host, dir_name)
+      store_dir = File.join(@containing_dir, url.host, dir_name)
       store_dir = escape_path(store_dir) if path_in_source
 
       file_name = "#{base_name}#{query}#{extension}"
@@ -53,7 +53,7 @@ module CourseraDownloader
     end
 
     def write(document)
-      store_dir, file_path = path(document.uri)
+      store_dir, file_path = path(document.url)
 
       FileUtils.mkdir_p(store_dir)
 

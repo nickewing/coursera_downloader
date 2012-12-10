@@ -2,11 +2,11 @@ require "uri"
 
 module CourseraDownloader
   class Document
-    attr_reader :uri, :content_type
+    attr_reader :url, :content_type
     attr_accessor :body
 
     def initialize(url, body, content_type)
-      @uri = URI.parse(url)
+      @url = url
       @body = body
       @content_type = content_type
     end
