@@ -2,7 +2,7 @@ Gem::Specification.new do |s|
   s.name         = "coursera_downloader"
   s.version      = "1.0.0"
   s.authors      = ["Nick Ewing"]
-  s.email        = ""
+  s.email        = "rubygems@nickewing.net"
   s.homepage     = "https://github.com/nickewing/coursera_downloader"
   s.summary      = "Download static versions of Coursera course websites."
   s.description  = "#{s.summary}."
