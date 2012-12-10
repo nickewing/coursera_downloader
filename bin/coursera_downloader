@@ -14,7 +14,7 @@ module CourseraDownloader
       course = CourseraDownloader::Course.new(course_name)
       course.login(email, password)
 
-      policy_file = File.expand_path("download_policy.yml", File.dirname(__FILE__))
+      policy_file = ARGV[4] || File.expand_path("download_policy.yml", File.dirname(__FILE__))
       policy = CourseraDownloader::Policy.new(policy_file)
       store = CourseraDownloader::FileStore.new(file_store_dir)
       downloader = CourseraDownloader::Downloader.new(course.cookie_file, policy, store)
