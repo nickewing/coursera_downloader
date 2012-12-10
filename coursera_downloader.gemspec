@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name         = "coursera_downloader"
-  s.version      = "0.1.0"
+  s.version      = "0.1.1"
   s.authors      = ["Nick Ewing"]
   s.email        = ""
   s.homepage     = "https://github.com/nickewing/coursera_downloader"
@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.description  = "#{s.summary}."
 
   s.files        = Dir["{lib/**/*,[A-Z]*}"]
-  s.executables  = "bin/coursera_downloader"
+  s.executables  = "coursera_downloader"
   s.platform     = Gem::Platform::RUBY
   s.require_path = "lib"
   s.rubyforge_project = "[none]"
