@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name         = "coursera_downloader"
-  s.version      = "0.1.2"
+  s.version      = "1.0.0"
   s.authors      = ["Nick Ewing"]
   s.email        = ""
   s.homepage     = "https://github.com/nickewing/coursera_downloader"
