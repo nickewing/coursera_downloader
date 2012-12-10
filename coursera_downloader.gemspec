@@ -15,4 +15,5 @@ Gem::Specification.new do |s|
 
   s.add_dependency "curb",  "~> 0.8"
   s.add_dependency "nokogiri",  "~> 1.5"
+  s.add_dependency "colored",  "~> 1.2"
 end

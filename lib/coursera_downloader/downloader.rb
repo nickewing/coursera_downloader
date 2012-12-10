@@ -1,3 +1,4 @@
+require "logger"
 require "set"
 require "yaml"
 require "uri"
@@ -5,6 +6,8 @@ require "uri"
 module CourseraDownloader
   class Downloader
     MAX_BATCH_SIZE = 10
+
+    attr_writer :logger
 
     def initialize(cookie_file, policy, store)
       @cookie_file = cookie_file
@@ -20,7 +23,16 @@ module CourseraDownloader
       url = URI.parse(url)
       enqueue_new_url(url)
       fetch_all
-      puts ">> #{@enqueued.length} total files downloaded."
+      logger.info("Downloaded #{@enqueued.length} total files")
+    end
+
+    def logger
+      unless @logger
+        @logger = Logger.new(STDOUT)
+        @logger.formatter = LogFormatter.new
+      end
+
+      @logger
     end
 
     private
@@ -70,6 +82,7 @@ module CourseraDownloader
         interrupted = false
         trap("INT") do
           interrupted = true
+          show_interrupt_message
         end
 
         while @queue.length > 0 && !interrupted
@@ -96,7 +109,7 @@ module CourseraDownloader
           curl.on_complete do |result|
             begin
               if result.response_code == 200
-                puts "Downloaded: #{url}"
+                logger.info("Downloaded: #{url}")
 
                 content_type = result.content_type
                 content_type.force_encoding("ASCII") if content_type.respond_to?(:force_encoding)
@@ -104,13 +117,10 @@ module CourseraDownloader
                 document = Document.new(url, result.body_str, content_type)
                 handle_document(document)
               else
-                # # TODO: use real logger
-                puts "WARN: Failed to get URL '#{url}'.  Response code #{result.response_code}" unless result.response_code == 200
+                logger.warn("Failed to get URL '#{url}'.  Response code #{result.response_code}")
               end
             rescue => e
-              # # TODO: handle this better
-              p e
-              puts e.backtrace
+              logger.error(e.message + "\n  " + e.backtrace.join("\n  "))
             end
           end
         end
@@ -126,6 +136,15 @@ module CourseraDownloader
         @enqueued << url
         @queue.push(url)
       end
+    end
+
+    def show_interrupt_message
+      return if @interrupt_message_shown
+
+      logger.warn("Finishing current download batch.")
+      logger.warn("This download can be resumed by rerunning the same command.")
+
+      @interrupt_message_shown = true
     end
 
   end
